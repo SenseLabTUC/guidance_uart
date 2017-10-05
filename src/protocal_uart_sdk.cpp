@@ -111,7 +111,7 @@ int pop( unsigned char *data, unsigned int &len )
 		}
 		else
 		{
-			printf( "header err!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" );
+			//printf( "header err!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" );
 		}
 	}
 

@@ -7,22 +7,10 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   sensor_msgs
   geometry_msgs
-  message_generation
 )
 find_package(OpenCV 2 REQUIRED core highgui)
 
-add_message_files(
-  FILES
-  Motion.msg
-)
-
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-)
-
 catkin_package(
-	CATKIN_DEPENDS roscpp std_msgs sensor_msgs geometry_msgs message_runtime
 )
 
 include_directories(
@@ -59,9 +47,6 @@ link_libraries(
 
 #set(SOURCES file.cpp file2.cpp ${YOUR_DIRECTORY}/file1.h ${YOUR_DIRECTORY}/file2.h)
 #add_executable(test ${SOURCES})
-
-
-
 
 add_executable(guidanceUARTNode
   src/main.cpp

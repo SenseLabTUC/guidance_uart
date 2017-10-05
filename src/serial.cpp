@@ -119,18 +119,17 @@ int uart_config(int fd, int nSpeed, int nBits, char nEvent, int nStop)
 		return -1;
 	}
 
-	printf("set UART port paramster done!\n");
+	printf("set UART port parameter done!\n");
 	return 0;
 }
 
-int connect_serial(char port, int baudrate)
+int connect_serial(char* port, int baudrate)
 {// currently only support baud rate 115200
 	
 	//My guidance data are posted on "/dev/ttyTHS2" , aka uart port 3
 	//const char *arm_path[] = { "/dev/ttyTHS0", "/dev/ttyTHS1", "/dev/ttyTHS2" };
 	baudrate=115200;
-	ROS_INFO("");
-	g_sdk_uart_fd = open("/dev/ttyTHS2", O_RDWR | O_NOCTTY);
+	g_sdk_uart_fd = open(port, O_RDWR | O_NOCTTY);
 
 	if (g_sdk_uart_fd < 0)
 	{

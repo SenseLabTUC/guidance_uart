@@ -10,10 +10,15 @@
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/Imu.h>
 #include <geometry_msgs/Vector3Stamped.h>
+#include <guidance_uart/Motion.h>
 
 #define CAMERA_PAIR_NUM 5
-#define UART_PORT 3 
 
+// PLEASE change this port parameter depending on your connection.
+// my connection is on port UART3 ~ "ttyTHS2"
+char UART_PORT[] = "/dev/ttyTHS2";
+
+ros::Publisher motion_pub;
 ros::Publisher obstacle_distance_pub;
 ros::Publisher velocity_pub;
 ros::Publisher ultrasonic_pub;
@@ -40,10 +45,11 @@ int callback ()
 		}
 
 		push( data, sizeof(data) );
+		printf("######### NEW DATA ############\n");
 		for ( ; ; )
 		{
 			unsigned int len = 0;
-			int has_packet = pop( data, len );
+			int has_packet = pop( data, len );			
 			if ( has_packet )
 			{
 				if ( len )
@@ -53,7 +59,7 @@ int callback ()
 					//printf("event id %u\n",cmd_id);
 					
 					//no image data posted via UART
-/*					if(cmd_id==e_imu){
+					if(cmd_id==e_imu){
 						printf("imu data received\n");
 					}
 					else if(cmd_id==e_ultrasonic){
@@ -67,7 +73,7 @@ int callback ()
 					}
 					else if(cmd_id==e_motion){
 						printf("motion data received\n");
-					}*/
+					}
 							
 					if ( e_imu == cmd_id )
 					{
@@ -125,9 +131,12 @@ int callback ()
 
 						soc2pc_vo_can_output output;
 						memcpy( &output, data + 2, sizeof(vo) );
-						vec_tmp.vector.x = vo.vx = 0.001f * output.m_vo_output.vx ;
-						vec_tmp.vector.y = vo.vy = 0.001f * output.m_vo_output.vy ;
-						vec_tmp.vector.z = vo.vz = 0.001f * output.m_vo_output.vz ;
+						vo.vx = output.m_vo_output.vx ;
+						vo.vy = output.m_vo_output.vy ;
+						vo.vz = output.m_vo_output.vz ;
+						vec_tmp.vector.x = 0.001f * vo.vx ;
+						vec_tmp.vector.y = 0.001f * vo.vy ;
+						vec_tmp.vector.z = 0.001f * vo.vz ;
 						velocity_pub.publish(vec_tmp);							
 						
 						//printf( "Velocities vx:%f vy:%f vz:%f\n", 0.001f * vo.vx, 0.001f * vo.vy, 0.001f * vo.vz );
@@ -166,7 +175,47 @@ int callback ()
 					{
 						motion mo;
 						memcpy( &mo, data + 2, sizeof(mo));
-												
+						guidance_uart::Motion motion_tmp;
+						
+						motion_tmp.frame_id  = "guidance_uart";
+						motion_tmp.stamp	 = ros::Time::now();			
+				
+						motion_tmp.corresponding_imu_index = mo.corresponding_imu_index;
+						motion_tmp.q0=mo.q0; motion_tmp.q1=mo.q1; motion_tmp.q2=mo.q2; motion_tmp.q3=mo.q3;
+						motion_tmp.attitude_status = mo.attitude_status;
+						motion_tmp.position_in_global_x = mo.position_in_global_x;
+						motion_tmp.position_in_global_y = mo.position_in_global_y;
+						motion_tmp.position_in_global_z = mo.position_in_global_z;
+						motion_tmp.position_status = mo.position_status;
+						motion_tmp.velocity_in_global_x = mo.velocity_in_global_x;
+						motion_tmp.velocity_in_global_y = mo.velocity_in_global_y;
+						motion_tmp.velocity_in_global_z = mo.velocity_in_global_z;
+						motion_tmp.velocity_status = mo.velocity_status;
+						
+						int size_ind=sizeof(mo.reserve_float)/sizeof(mo.reserve_float[0]);
+						for(int i=0;i<size_ind;i++){
+							motion_tmp.reserve_float.push_back(mo.reserve_float[i]);
+						}
+						
+						size_ind=sizeof(mo.reserve_int)/sizeof(mo.reserve_int[0]);
+						for(int i=0;i<size_ind;i++){
+							motion_tmp.reserve_int.push_back(mo.reserve_int[i]);
+						}
+						
+						size_ind=sizeof(mo.uncertainty_location)/sizeof(mo.uncertainty_location[0]);
+						for(int i=0;i<size_ind;i++){
+							motion_tmp.uncertainty_location.push_back(mo.uncertainty_location[i]);
+						}
+						
+						size_ind=sizeof(mo.uncertainty_velocity)/sizeof(mo.uncertainty_velocity[0]);
+						for(int i=0;i<size_ind;i++){
+							motion_tmp.uncertainty_velocity.push_back(mo.uncertainty_velocity[i]);
+						}
+						
+						//posting motion data ..
+						motion_pub.publish(motion_tmp);
+
+						
 /*						printf("corresponding_imu_index %d\n",mo.corresponding_imu_index);
 						printf("q0 %f q1 %f q2 %f q3 %f \n",mo.q0,mo.q1,mo.q2,mo.q3);
 						printf("attitude status %d \n",mo.attitude_status);
@@ -207,12 +256,14 @@ int main(int argc, char **argv)
 
 	ros::Rate loop_rate(10);
 	
+	motion_pub				= n.advertise<guidance_uart::Motion>("/guidance_uart/motion",1);
 	imu_pub					= n.advertise<sensor_msgs::Imu>("/guidance_uart/imu",1);
 	velocity_pub  			= n.advertise<geometry_msgs::Vector3Stamped>("/guidance_uart/velocity",1);
 	obstacle_distance_pub	= n.advertise<sensor_msgs::LaserScan>("/guidance_uart/obstacle_distance",1);
 	ultrasonic_pub			= n.advertise<sensor_msgs::LaserScan>("/guidance_uart/ultrasonic",1);
 	
 	while(ros::ok){
+		printf("posting ros data..");
 		callback();
 		ros::spinOnce();
 	}
