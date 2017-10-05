@@ -1,46 +1,25 @@
 #include <stdio.h>
 #include <string.h>
-#ifdef WIN32
-#include "windows/serial.h"
-#else
 #include "serial.h"
-#endif
 #include "crc32.h"
 #include "protocal_uart_sdk.h"
 #include "DJI_guidance.h"
-
-#include <ros/ros.h>
-
-#define UART 1
-#define CAMERA_PAIR_NUM 5
-#ifdef WIN32
-#define UART_PORT "COM5"
-#else
-#define UART_PORT 3 
-#endif
-
-#include <stdio.h>
-#include <string.h>
-#include <iostream>
-#include <ros/ros.h>
-#include <cv_bridge/cv_bridge.h>
-#include <sensor_msgs/Image.h>
-#include <sensor_msgs/image_encodings.h>
-
-#include <opencv2/opencv.hpp>
-
-#include "DJI_guidance.h"
 #include "DJI_utility.h"
 
-#include <geometry_msgs/TransformStamped.h> //IMU
-#include <geometry_msgs/Vector3Stamped.h> //velocity
-#include <sensor_msgs/LaserScan.h> //obstacle distance & ultrasonic
+#include <ros/ros.h>
+#include <sensor_msgs/LaserScan.h>
+#include <geometry_msgs/Vector3Stamped.h>
+
+#define CAMERA_PAIR_NUM 5
+#define UART_PORT 3 
+
+ros::Publisher obstacle_distance_pub;
+ros::Publisher velocity_pub;
+ros::Publisher ultrasonic_pub;
 
 
 
-using namespace cv;
-
-int main()
+int callback ()
 {
 	if ( connect_serial( UART_PORT ) < 0 )
 	{
@@ -55,7 +34,6 @@ int main()
 
 	for ( int i = 0; i < 1000; ++i )
 	{
-		//printf("+++++++++++++++++++++++++++++++NEW DATA+++++++++++++++++++++++++++++++++\n");
 		unsigned char data[1000] = {0};
 		int max_size = (int)sizeof(data);
 		int timeout = 1000;
@@ -77,7 +55,9 @@ int main()
 				{
 					unsigned char cmd_id = data[1];
 					
-					//printf("event id %u\n",data[1]);
+					printf("event id %u\n",cmd_id);
+					
+					//no image data posted via UART
 /*					if(cmd_id==e_imu){
 						printf("imu data received\n");
 					}
@@ -118,24 +98,37 @@ int main()
 					if ( e_velocity == cmd_id )
 					{
 						velocity vo;
+						geometry_msgs::Vector3Stamped vec_temp;
+						vec_temp.header.frame_id  = "guidance_uart";
+						vec_temp.header.stamp	 = ros::Time::now();
+
 						soc2pc_vo_can_output output;
 						memcpy( &output, data + 2, sizeof(vo) );
-						vo.vx = output.m_vo_output.vx;
-						vo.vy = output.m_vo_output.vy;
-						vo.vz = output.m_vo_output.vz;
-/*						printf( "vx:%f vy:%f vz:%f\n", 0.001f * vo.vx, 0.001f * vo.vy, 0.001f * vo.vz );
-						printf( "frame index:%d,stamp:%d\n", vo.frame_index, vo.time_stamp );
+						vec_temp.vector.x = vo.vx = 0.001f * output.m_vo_output.vx ;
+						vec_temp.vector.y = vo.vy = 0.001f * output.m_vo_output.vy ;
+						vec_temp.vector.z = vo.vz = 0.001f * output.m_vo_output.vz ;
+						velocity_pub.publish(vec_temp);							
+						
+						//printf( "vx:%f vy:%f vz:%f\n", 0.001f * vo.vx, 0.001f * vo.vy, 0.001f * vo.vz );
+/*						printf( "frame index:%d,stamp:%d\n", vo.frame_index, vo.time_stamp );
 						printf( "\n" );*/
 					}
 					if ( e_obstacle_distance == cmd_id )
 					{
 						obstacle_distance oa;
 						memcpy( &oa, data + 2, sizeof(oa) );
-/*						printf( "obstacle distance:" );
+						sensor_msgs::LaserScan obstacle_dists;
+						obstacle_dists.ranges.resize(CAMERA_PAIR_NUM);
+						obstacle_dists.header.frame_id  = "guidance_uart";
+						obstacle_dists.header.stamp	 = ros::Time::now();
+						
+						//printf( "obstacle distance:" );
 						for ( int direction = 0; direction < CAMERA_PAIR_NUM; ++direction )
 						{
+							obstacle_dists.ranges[direction] = 0.01f * oa.distance[direction] ;
 							printf( " %f ", 0.01f * oa.distance[direction] );
-						}*/
+						}
+						obstacle_distance_pub.publish(obstacle_dists);
 						/*printf( "\n" );
 						printf( "frame index:%d,stamp:%d\n", oa.frame_index, oa.time_stamp );
 						printf( "\n" );*/
@@ -144,11 +137,9 @@ int main()
 					if( e_motion == cmd_id )
 					{
 						motion mo;
-						memcpy( &mo, data + 2, sizeof(mo));mo
-						printf("new motion data ");
-						
-						
-						printf("corresponding_imu_index %d\n",mo.corresponding_imu_index);
+						memcpy( &mo, data + 2, sizeof(mo));
+												
+/*						printf("corresponding_imu_index %d\n",mo.corresponding_imu_index);
 						printf("q0 %f q1 %f q2 %f q3 %f \n",mo.q0,mo.q1,mo.q2,mo.q3);
 						printf("attitude status %d \n",mo.attitude_status);
 						printf("positions in global %f %f %f \n",mo.position_in_global_x,mo.position_in_global_y,mo.position_in_global_z);
@@ -159,16 +150,9 @@ int main()
 						printf("reserve_int %d %d %d %d\n ",mo.reserve_int[0],mo.reserve_int[1],mo.reserve_int[2],mo.reserve_int[3]);
 						printf("uncertainty_location %f %f %f %f \n", mo.uncertainty_location[0],mo.uncertainty_location[1],mo.uncertainty_location[2],mo.uncertainty_location[3]);
 						printf("uncertainty_velocity %f %f %f %f \n", mo.uncertainty_velocity[0],mo.uncertainty_velocity[1],mo.uncertainty_velocity[2],mo.uncertainty_velocity[3]);
-
-
-								
-								
-						
-						
+							*/	
 						
 					}
-					
-					
 					
 				}
 				else
@@ -187,3 +171,23 @@ int main()
 
 	return 0;
 }
+
+int main(int argc, char **argv)
+{
+	ros::init(argc, argv, "guidance_uart");
+	ros::NodeHandle n;
+
+	ros::Rate loop_rate(10);
+	
+	velocity_pub  			= n.advertise<geometry_msgs::Vector3Stamped>("/guidance_uart/velocity",1);
+	obstacle_distance_pub	= n.advertise<sensor_msgs::LaserScan>("/guidance_uart/obstacle_distance",1);
+	ultrasonic_pub			= n.advertise<sensor_msgs::LaserScan>("/guidance_uart/ultrasonic",1);
+
+	
+	callback();
+	printf("mpe");
+	ros::spinOnce();
+
+	return 0;
+}
+
