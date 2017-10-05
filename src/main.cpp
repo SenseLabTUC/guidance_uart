@@ -11,7 +11,7 @@
 #include <sensor_msgs/Imu.h>
 #include <geometry_msgs/Vector3Stamped.h>
 #include <guidance_uart/Motion.h>
-
+#include <iostream>
 #define CAMERA_PAIR_NUM 5
 
 // PLEASE change this port parameter depending on your connection.
@@ -47,7 +47,7 @@ int callback ()
 		}
 
 		push( data, sizeof(data) );
-		printf("######### NEW DATA ############\n");
+		//printf("######### NEW DATA ############\n");
 		for ( ; ; )
 		{
 			unsigned int len = 0;
@@ -61,7 +61,7 @@ int callback ()
 					//printf("event id %u\n",cmd_id);
 					
 					//no image data posted via UART
-					if(cmd_id==e_imu){
+/*					if(cmd_id==e_imu){
 						printf("imu data received\n");
 					}
 					else if(cmd_id==e_ultrasonic){
@@ -75,7 +75,7 @@ int callback ()
 					}
 					else if(cmd_id==e_motion){
 						printf("motion data received\n");
-					}
+					}*/
 							
 					if ( e_imu == cmd_id )
 					{
@@ -254,8 +254,13 @@ int callback ()
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "guidance_uart");
-	ros::NodeHandle n;
+	ros::NodeHandle n("~");
 
+	std::string s;
+	n.param<std::string>("uart_port", s, "default_value");
+	std::cout<<s;
+	if()
+	return 0;
 	ros::Rate loop_rate(10);
 	
 	motion_pub				= n.advertise<guidance_uart::Motion>("/guidance_uart/motion",1);

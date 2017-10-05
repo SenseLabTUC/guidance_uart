@@ -1,0 +1,5 @@
+<launch>
+    <node pkg="guidance_uart" type="guidanceUARTNode" name="guidanceUARTNodea">
+		<param name="uart_port" value="/dev/ttyTHS2"/>
+	</node>
+</launch>
