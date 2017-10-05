@@ -8,6 +8,7 @@
 
 #include <ros/ros.h>
 #include <sensor_msgs/LaserScan.h>
+#include <sensor_msgs/Imu.h>
 #include <geometry_msgs/Vector3Stamped.h>
 
 #define CAMERA_PAIR_NUM 5
@@ -16,8 +17,7 @@
 ros::Publisher obstacle_distance_pub;
 ros::Publisher velocity_pub;
 ros::Publisher ultrasonic_pub;
-
-
+ros::Publisher imu_pub;
 
 int callback ()
 {
@@ -73,6 +73,20 @@ int callback ()
 					{
 						imu imu_data;
 						memcpy( &imu_data, data + 2, sizeof(imu_data) );
+						sensor_msgs::Imu imu_tmp;			
+																
+						imu_tmp.header.frame_id  = "guidance_uart";
+						imu_tmp.header.stamp	 = ros::Time::now();
+						imu_tmp.linear_acceleration.x=imu_data.acc_x;
+						imu_tmp.linear_acceleration.y=imu_data.acc_y;
+						imu_tmp.linear_acceleration.z=imu_data.acc_z;
+						//< quaternion: [w,x,y,z], info from DJI_guidance.h
+						imu_tmp.orientation.w=imu_data.q[0];
+						imu_tmp.orientation.x=imu_data.q[1];
+						imu_tmp.orientation.y=imu_data.q[2];
+						imu_tmp.orientation.z=imu_data.q[3];
+						imu_pub.publish(imu_tmp);
+						
 /*						printf( "imu:%f %f %f,%f %f %f %f\n", imu_data.acc_x, imu_data.acc_y, imu_data.acc_z, 
 							     imu_data.q[0], imu_data.q[1], imu_data.q[2], imu_data.q[3] );*/
 						/*printf( "frame index:%d,stamp:%d\n", imu_data.frame_index, imu_data.time_stamp );
@@ -84,19 +98,19 @@ int callback ()
 						ultrasonic_data ultrasonic;
 						memcpy( &ultrasonic, data + 2, sizeof(ultrasonic) );
 
-						sensor_msgs::LaserScan ultrasonic_dists;
-						ultrasonic_dists.ranges.resize(CAMERA_PAIR_NUM);
-						ultrasonic_dists.intensities.resize(CAMERA_PAIR_NUM);						
-						ultrasonic_dists.header.frame_id  = "guidance_uart";
-						ultrasonic_dists.header.stamp	 = ros::Time::now();					
+						sensor_msgs::LaserScan ultrasonic_dists_tmp;
+						ultrasonic_dists_tmp.ranges.resize(CAMERA_PAIR_NUM);
+						ultrasonic_dists_tmp.intensities.resize(CAMERA_PAIR_NUM);						
+						ultrasonic_dists_tmp.header.frame_id  = "guidance_uart";
+						ultrasonic_dists_tmp.header.stamp	 = ros::Time::now();					
 						
 						for ( int d = 0; d < CAMERA_PAIR_NUM; ++d )
 						{
-							ultrasonic_dists.ranges[d] = 0.001f * ultrasonic.ultrasonic[d];
-							ultrasonic_dists.intensities[d] = 1.0 * ultrasonic.reliability[d];
+							ultrasonic_dists_tmp.ranges[d] = 0.001f * ultrasonic.ultrasonic[d];
+							ultrasonic_dists_tmp.intensities[d] = 1.0 * ultrasonic.reliability[d];
 							//printf( "distance:%f,reliability:%d\n", ultrasonic.ultrasonic[d] * 0.001f, (int)ultrasonic.reliability[d] );
 						}
-						ultrasonic_pub.publish(ultrasonic_dists);						
+						ultrasonic_pub.publish(ultrasonic_dists_tmp);						
 						
 						/*printf( "frame index:%d,stamp:%d\n", ultrasonic.frame_index, ultrasonic.time_stamp );
 						printf( "\n" );*/
@@ -105,16 +119,16 @@ int callback ()
 					if ( e_velocity == cmd_id )
 					{
 						velocity vo;
-						geometry_msgs::Vector3Stamped vec_temp;
-						vec_temp.header.frame_id  = "guidance_uart";
-						vec_temp.header.stamp	 = ros::Time::now();
+						geometry_msgs::Vector3Stamped vec_tmp;
+						vec_tmp.header.frame_id  = "guidance_uart";
+						vec_tmp.header.stamp	 = ros::Time::now();
 
 						soc2pc_vo_can_output output;
 						memcpy( &output, data + 2, sizeof(vo) );
-						vec_temp.vector.x = vo.vx = 0.001f * output.m_vo_output.vx ;
-						vec_temp.vector.y = vo.vy = 0.001f * output.m_vo_output.vy ;
-						vec_temp.vector.z = vo.vz = 0.001f * output.m_vo_output.vz ;
-						velocity_pub.publish(vec_temp);							
+						vec_tmp.vector.x = vo.vx = 0.001f * output.m_vo_output.vx ;
+						vec_tmp.vector.y = vo.vy = 0.001f * output.m_vo_output.vy ;
+						vec_tmp.vector.z = vo.vz = 0.001f * output.m_vo_output.vz ;
+						velocity_pub.publish(vec_tmp);							
 						
 						//printf( "Velocities vx:%f vy:%f vz:%f\n", 0.001f * vo.vx, 0.001f * vo.vy, 0.001f * vo.vz );
 /*						printf( "frame index:%d,stamp:%d\n", vo.frame_index, vo.time_stamp );
@@ -125,10 +139,10 @@ int callback ()
 					{
 						obstacle_distance oa;
 						memcpy( &oa, data + 2, sizeof(oa) );
-						sensor_msgs::LaserScan obstacle_dists;
-						obstacle_dists.ranges.resize(CAMERA_PAIR_NUM);
-						obstacle_dists.header.frame_id  = "guidance_uart";
-						obstacle_dists.header.stamp	 = ros::Time::now();
+						sensor_msgs::LaserScan obstacle_dists_tmp;
+						obstacle_dists_tmp.ranges.resize(CAMERA_PAIR_NUM);
+						obstacle_dists_tmp.header.frame_id  = "guidance_uart";
+						obstacle_dists_tmp.header.stamp	 = ros::Time::now();
 						
 						/**
 						* obstacle_distance
@@ -138,10 +152,10 @@ int callback ()
 						//printf( "obstacle distance:" );
 						for ( int direction = 0; direction < CAMERA_PAIR_NUM; ++direction )
 						{
-							obstacle_dists.ranges[direction] = 0.01f * oa.distance[direction] ;
+							obstacle_dists_tmp.ranges[direction] = 0.01f * oa.distance[direction] ;
 							//printf( " %f ", 0.01f * oa.distance[direction] );
 						}
-						obstacle_distance_pub.publish(obstacle_dists);
+						obstacle_distance_pub.publish(obstacle_dists_tmp);
 						
 						/*printf( "\n" );
 						printf( "frame index:%d,stamp:%d\n", oa.frame_index, oa.time_stamp );
@@ -193,12 +207,15 @@ int main(int argc, char **argv)
 
 	ros::Rate loop_rate(10);
 	
+	imu_pub					= n.advertise<sensor_msgs::Imu>("/guidance_uart/imu",1);
 	velocity_pub  			= n.advertise<geometry_msgs::Vector3Stamped>("/guidance_uart/velocity",1);
 	obstacle_distance_pub	= n.advertise<sensor_msgs::LaserScan>("/guidance_uart/obstacle_distance",1);
 	ultrasonic_pub			= n.advertise<sensor_msgs::LaserScan>("/guidance_uart/ultrasonic",1);
 	
-	callback();
-	ros::spinOnce();
+	while(ros::ok){
+		callback();
+		ros::spinOnce();
+	}
 
 	return 0;
 }
