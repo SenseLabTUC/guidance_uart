@@ -224,10 +224,10 @@ int callback ()
 						printf("velocity_in_global_x  %f %f %f \n",mo.velocity_in_global_x,mo.velocity_in_global_y,mo.velocity_in_global_z);
 						printf("velocity_status  %d\n",mo.velocity_status);
 
-						printf("reserve_int %d %d %d %d\n ",mo.reserve_int[0],mo.reserve_int[1],mo.reserve_int[2],mo.reserve_int[3]);
+				*/			printf("reserve_int %d %d %d %d\n ",mo.reserve_int[0],mo.reserve_int[1],mo.reserve_int[2],mo.reserve_int[3]);
 						printf("uncertainty_location %f %f %f %f \n", mo.uncertainty_location[0],mo.uncertainty_location[1],mo.uncertainty_location[2],mo.uncertainty_location[3]);
 						printf("uncertainty_velocity %f %f %f %f \n", mo.uncertainty_velocity[0],mo.uncertainty_velocity[1],mo.uncertainty_velocity[2],mo.uncertainty_velocity[3]);
-							*/	
+							
 						
 					}
 					
