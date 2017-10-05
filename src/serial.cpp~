@@ -155,7 +155,6 @@ int read_serial( unsigned char *buf, int len, int timeout )
 			
 	    int n = read(g_sdk_uart_fd, buf + read_len, len);
 
-        if( n < 0 )
         {
             break;
         }
