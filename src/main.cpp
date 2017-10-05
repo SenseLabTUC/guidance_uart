@@ -26,12 +26,14 @@ ros::Publisher imu_pub;
 
 int callback ()
 {
+	printf("Connecting on serial port \"%s\" ...\n",UART_PORT);
+	return 0;
 	if ( connect_serial( UART_PORT ) < 0 )
 	{
         printf( "connect serial error\n" );
         return 0;
 	}
-	
+	printf("Creating topics and posting ...\n");
 	for ( int i = 0; i < 1000; ++i )
 	{
 		unsigned char data[1000] = {0};
@@ -224,10 +226,10 @@ int callback ()
 						printf("velocity_in_global_x  %f %f %f \n",mo.velocity_in_global_x,mo.velocity_in_global_y,mo.velocity_in_global_z);
 						printf("velocity_status  %d\n",mo.velocity_status);
 
-				*/			printf("reserve_int %d %d %d %d\n ",mo.reserve_int[0],mo.reserve_int[1],mo.reserve_int[2],mo.reserve_int[3]);
+						printf("reserve_int %d %d %d %d\n ",mo.reserve_int[0],mo.reserve_int[1],mo.reserve_int[2],mo.reserve_int[3]);
 						printf("uncertainty_location %f %f %f %f \n", mo.uncertainty_location[0],mo.uncertainty_location[1],mo.uncertainty_location[2],mo.uncertainty_location[3]);
 						printf("uncertainty_velocity %f %f %f %f \n", mo.uncertainty_velocity[0],mo.uncertainty_velocity[1],mo.uncertainty_velocity[2],mo.uncertainty_velocity[3]);
-							
+							*/	
 						
 					}
 					
@@ -263,7 +265,6 @@ int main(int argc, char **argv)
 	ultrasonic_pub			= n.advertise<sensor_msgs::LaserScan>("/guidance_uart/ultrasonic",1);
 	
 	while(ros::ok){
-		printf("posting ros data..");
 		callback();
 		ros::spinOnce();
 	}

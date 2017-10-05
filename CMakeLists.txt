@@ -3,13 +3,12 @@ project(guidance_uart)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  cv_bridge
   std_msgs
   sensor_msgs
   geometry_msgs
   message_generation
+  roslaunch
 )
-find_package(OpenCV 2 REQUIRED core highgui)
 
 add_message_files(
   FILES
@@ -26,7 +25,6 @@ catkin_package(
 )
 
 include_directories(
-  ${OpenCV_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
   include
 )
@@ -51,7 +49,6 @@ else ()
 endif ()
 
 link_libraries(
-  ${OpenCV_LIBS}
   ${catkin_LIBRARIES}
   DJI_guidance
   usb-1.0
@@ -60,9 +57,6 @@ link_libraries(
 #set(SOURCES file.cpp file2.cpp ${YOUR_DIRECTORY}/file1.h ${YOUR_DIRECTORY}/file2.h)
 #add_executable(test ${SOURCES})
 
-
-
-
 add_executable(guidanceUARTNode
   src/main.cpp
   src/serial.cpp
@@ -70,5 +64,7 @@ add_executable(guidanceUARTNode
   src/crc32.cpp
   src/protocal_uart_sdk.cpp
   ) 
+
+roslaunch_add_file_check(launch)
 
 #  vim: set et fenc=utf-8 ff=unix sts=0 sw=2 ts=2 :
