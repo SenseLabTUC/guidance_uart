@@ -26,12 +26,7 @@ int callback ()
         printf( "connect serial error\n" );
         return 0;
 	}
-	printf("serial connected (main)\n");
-
-	stereo_cali cali[CAMERA_PAIR_NUM];
-	int err_code = get_stereo_cali(cali);
-	printf("err code %d \n",err_code);
-
+	
 	for ( int i = 0; i < 1000; ++i )
 	{
 		unsigned char data[1000] = {0};
@@ -55,7 +50,7 @@ int callback ()
 				{
 					unsigned char cmd_id = data[1];
 					
-					printf("event id %u\n",cmd_id);
+					//printf("event id %u\n",cmd_id);
 					
 					//no image data posted via UART
 /*					if(cmd_id==e_imu){
@@ -88,13 +83,25 @@ int callback ()
 					{
 						ultrasonic_data ultrasonic;
 						memcpy( &ultrasonic, data + 2, sizeof(ultrasonic) );
-/*						for ( int d = 0; d < CAMERA_PAIR_NUM; ++d )
+
+						sensor_msgs::LaserScan ultrasonic_dists;
+						ultrasonic_dists.ranges.resize(CAMERA_PAIR_NUM);
+						ultrasonic_dists.intensities.resize(CAMERA_PAIR_NUM);						
+						ultrasonic_dists.header.frame_id  = "guidance_uart";
+						ultrasonic_dists.header.stamp	 = ros::Time::now();					
+						
+						for ( int d = 0; d < CAMERA_PAIR_NUM; ++d )
 						{
-							printf( "distance:%f,reliability:%d\n", ultrasonic.ultrasonic[d] * 0.001f, (int)ultrasonic.reliability[d] );
-						}*/
+							ultrasonic_dists.ranges[d] = 0.001f * ultrasonic.ultrasonic[d];
+							ultrasonic_dists.intensities[d] = 1.0 * ultrasonic.reliability[d];
+							//printf( "distance:%f,reliability:%d\n", ultrasonic.ultrasonic[d] * 0.001f, (int)ultrasonic.reliability[d] );
+						}
+						ultrasonic_pub.publish(ultrasonic_dists);						
+						
 						/*printf( "frame index:%d,stamp:%d\n", ultrasonic.frame_index, ultrasonic.time_stamp );
 						printf( "\n" );*/
 					}
+					
 					if ( e_velocity == cmd_id )
 					{
 						velocity vo;
@@ -109,10 +116,11 @@ int callback ()
 						vec_temp.vector.z = vo.vz = 0.001f * output.m_vo_output.vz ;
 						velocity_pub.publish(vec_temp);							
 						
-						//printf( "vx:%f vy:%f vz:%f\n", 0.001f * vo.vx, 0.001f * vo.vy, 0.001f * vo.vz );
+						//printf( "Velocities vx:%f vy:%f vz:%f\n", 0.001f * vo.vx, 0.001f * vo.vy, 0.001f * vo.vz );
 /*						printf( "frame index:%d,stamp:%d\n", vo.frame_index, vo.time_stamp );
 						printf( "\n" );*/
 					}
+					
 					if ( e_obstacle_distance == cmd_id )
 					{
 						obstacle_distance oa;
@@ -122,13 +130,19 @@ int callback ()
 						obstacle_dists.header.frame_id  = "guidance_uart";
 						obstacle_dists.header.stamp	 = ros::Time::now();
 						
+						/**
+						* obstacle_distance
+						* Define obstacle distance calculated by fusing vision and ultrasonic sensors. Unit is `cm`.
+						*/
+						
 						//printf( "obstacle distance:" );
 						for ( int direction = 0; direction < CAMERA_PAIR_NUM; ++direction )
 						{
 							obstacle_dists.ranges[direction] = 0.01f * oa.distance[direction] ;
-							printf( " %f ", 0.01f * oa.distance[direction] );
+							//printf( " %f ", 0.01f * oa.distance[direction] );
 						}
 						obstacle_distance_pub.publish(obstacle_dists);
+						
 						/*printf( "\n" );
 						printf( "frame index:%d,stamp:%d\n", oa.frame_index, oa.time_stamp );
 						printf( "\n" );*/
@@ -182,10 +196,8 @@ int main(int argc, char **argv)
 	velocity_pub  			= n.advertise<geometry_msgs::Vector3Stamped>("/guidance_uart/velocity",1);
 	obstacle_distance_pub	= n.advertise<sensor_msgs::LaserScan>("/guidance_uart/obstacle_distance",1);
 	ultrasonic_pub			= n.advertise<sensor_msgs::LaserScan>("/guidance_uart/ultrasonic",1);
-
 	
 	callback();
-	printf("mpe");
 	ros::spinOnce();
 
 	return 0;
