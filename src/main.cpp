@@ -12,6 +12,8 @@
 #include <geometry_msgs/Vector3Stamped.h>
 #include <guidance_uart/Motion.h>
 #include <iostream>
+#include <signal.h>
+
 #define CAMERA_PAIR_NUM 5
 
 // PLEASE change this port parameter depending on your connection.
@@ -30,8 +32,8 @@ int callback ()
 	
 	if ( connect_serial( UART_PORT ) < 0 )
 	{
-        printf( "connect serial error\n" );
-        return 0;
+		printf( "Cannot serial connect on the port.\n" );
+		return 0;
 	}
 	printf("Creating topics and posting ...\n");
 	for ( int i = 0; i < 1000; ++i )
@@ -77,6 +79,7 @@ int callback ()
 						printf("motion data received\n");
 					}*/
 							
+					
 					if ( e_imu == cmd_id )
 					{
 						imu imu_data;
@@ -247,13 +250,13 @@ int callback ()
 	}
 
 	disconnect_serial();
-
-	return 0;
+	
+	return -1;
 }
 
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "guidance_uart");
+	ros::init(argc, argv, "guidance_uart", ros::init_options::NoSigintHandler);
 	ros::NodeHandle n("~");
 
 	std::string str;
