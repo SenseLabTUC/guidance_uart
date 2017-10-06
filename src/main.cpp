@@ -16,7 +16,7 @@
 
 // PLEASE change this port parameter depending on your connection.
 // my connection is on port UART3 ~ "ttyTHS2"
-char UART_PORT[] = "/dev/ttyTHS2";
+char UART_PORT[50] = "/dev/ttyTHS2";
 
 ros::Publisher motion_pub;
 ros::Publisher obstacle_distance_pub;
@@ -27,7 +27,7 @@ ros::Publisher imu_pub;
 int callback ()
 {
 	printf("Connecting on serial port \"%s\" ...\n",UART_PORT);
-	return 0;
+	
 	if ( connect_serial( UART_PORT ) < 0 )
 	{
         printf( "connect serial error\n" );
@@ -256,18 +256,21 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "guidance_uart");
 	ros::NodeHandle n("~");
 
-	std::string s;
-	n.param<std::string>("uart_port", s, "default_value");
-	std::cout<<s;
-	if()
-	return 0;
+	std::string str;
+	n.param<std::string>("uart_port", str, "/dev/ttyTHS2");
+	
+	if(str!="/dev/ttyTHS2"){ //if not default value, read value from launch file..
+		std::copy(str.begin(), str.end(), UART_PORT);
+		UART_PORT[str.size()] = '\0';
+	}
+	
 	ros::Rate loop_rate(10);
 	
-	motion_pub				= n.advertise<guidance_uart::Motion>("/guidance_uart/motion",1);
-	imu_pub					= n.advertise<sensor_msgs::Imu>("/guidance_uart/imu",1);
-	velocity_pub  			= n.advertise<geometry_msgs::Vector3Stamped>("/guidance_uart/velocity",1);
+	motion_pub		= n.advertise<guidance_uart::Motion>("/guidance_uart/motion",1);
+	imu_pub			= n.advertise<sensor_msgs::Imu>("/guidance_uart/imu",1);
+	velocity_pub  		= n.advertise<geometry_msgs::Vector3Stamped>("/guidance_uart/velocity",1);
 	obstacle_distance_pub	= n.advertise<sensor_msgs::LaserScan>("/guidance_uart/obstacle_distance",1);
-	ultrasonic_pub			= n.advertise<sensor_msgs::LaserScan>("/guidance_uart/ultrasonic",1);
+	ultrasonic_pub		= n.advertise<sensor_msgs::LaserScan>("/guidance_uart/ultrasonic",1);
 	
 	while(ros::ok){
 		callback();
