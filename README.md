@@ -17,7 +17,7 @@ cd .. && catkin_make
 For example,
 
 ```
-roslaunch guidance_uart uart_port.launch uart_port:= "/dev/ttyTHS2" 
+roslaunch guidance_uart uart_port.launch port:= "/dev/ttyTHS2" 
 ```
 or by rosrunning the node, with the default UART port, on "/dev/ttyTHS2" (UART3),
 ```
