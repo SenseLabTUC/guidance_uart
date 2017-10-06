@@ -12,7 +12,6 @@
 #include <geometry_msgs/Vector3Stamped.h>
 #include <guidance_uart/Motion.h>
 #include <iostream>
-#include <signal.h>
 
 #define CAMERA_PAIR_NUM 5
 
