@@ -256,7 +256,7 @@ int callback ()
 
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "guidance_uart", ros::init_options::NoSigintHandler);
+	ros::init(argc, argv, "guidance_uart");
 	ros::NodeHandle n("~");
 
 	std::string str;
