@@ -1,6 +1,6 @@
 # GUIDANCE-SDK-ROS-UART 
 
-This is a DJI Guidance ROS node for UART connection, based on the DJI [uart_example](https://github.com/dji-sdk/GuidanceSDK/tree/master/examples/uart_example).
+This is a DJI Guidance ROS node for UART connection, based on the DJI [uart_example](https://github.com/dji-sdk/GuidanceSDK/tree/master/examples/uart_example) from  [GuidanceSDK](https://github.com/dji-sdk/Guidance-SDK) repo.
 
 For USB connection, the repo can be found on [Guidance-SDK-ROS](https://github.com/dji-sdk/Guidance-SDK-ROS).
 
