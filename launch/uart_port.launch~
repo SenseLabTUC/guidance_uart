@@ -1,7 +1,0 @@
-<launch>
-  	<arg name="port" default="/dev/ttyTHS2" />
-
-	<node pkg="guidance_uart" type="guidanceUARTNode" name="guidanceUARTNodea" output="screen" respawn="true">
-		<param name="uart_port" value="$(arg port)"/>
-	</node>
-</launch>
