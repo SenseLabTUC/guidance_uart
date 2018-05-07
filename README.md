@@ -12,7 +12,7 @@ cd ~/catkin_ws/src
 git clone this
 cd .. && catkin_make
 ```
-2. Execution with $roslaunch, by specifying your UART connection port.
+2. Execution with $roslaunch, by specifying your UART connection port. (Must provide ROOT privileges)
 
 For example,
 
